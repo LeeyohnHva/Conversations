@@ -84,7 +84,7 @@ public class RecordingActivity extends Activity implements View.OnClickListener 
 		}
 	}
 
-	private boolean startRecording() {
+	public boolean startRecording() {
 		mRecorder = new MediaRecorder();
 		mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
 		mRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
@@ -107,7 +107,7 @@ public class RecordingActivity extends Activity implements View.OnClickListener 
 		}
 	}
 
-	protected void stopRecording(boolean saveFile) {
+	public void stopRecording(boolean saveFile) {
 		mShouldFinishAfterWrite = saveFile;
 		try {
 			mRecorder.stop();
