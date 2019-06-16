@@ -10,6 +10,14 @@ buildscript {
     }
 }
 
+plugins {
+    id "org.sonarqube" version "2.7.1"
+}
+
+sonarqube {
+    androidVariant "conversationsFreeSystemRelease"
+}
+
 apply plugin: 'com.android.application'
 
 repositories {
@@ -68,6 +76,10 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-gson:2.5.0'
     implementation 'com.google.guava:guava:27.1-android'
     quicksyImplementation 'io.michaelrocks:libphonenumber-android:8.10.1'
+    testImplementation 'junit:junit:4.12'
+    testImplementation "org.mockito:mockito-core:2.28.2"
+    implementation 'org.testng:testng:6.9.6'
+    implementation 'org.mockito:mockito-core:2.28.2'
 }
 
 ext {
