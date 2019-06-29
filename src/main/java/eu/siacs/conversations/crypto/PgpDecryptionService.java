@@ -27,7 +27,7 @@ import eu.siacs.conversations.http.HttpConnectionManager;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.MimeUtils;
 
-public class PgpDecryptionService {
+public class 	PgpDecryptionService {
 
 	protected final ArrayDeque<Message> messages = new ArrayDeque<>();
 	protected final HashSet<Message> pendingNotifications = new HashSet<>();
@@ -187,47 +187,51 @@ public class PgpDecryptionService {
 					outputFile.createNewFile();
 					InputStream is = new FileInputStream(inputFile);
 					OutputStream os = new FileOutputStream(outputFile);
-					Intent result = getOpenPgpApi().executeApi(params, is, os);
-					switch (result.getIntExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_ERROR)) {
-						case OpenPgpApi.RESULT_CODE_SUCCESS:
-							OpenPgpMetadata openPgpMetadata = result.getParcelableExtra(OpenPgpApi.RESULT_METADATA);
-							String originalFilename = openPgpMetadata.getFilename();
-							String originalExtension = originalFilename == null ? null : MimeUtils.extractRelevantExtension(originalFilename);
-							if (originalExtension != null && MimeUtils.extractRelevantExtension(outputFile.getName()) == null) {
-								Log.d(Config.LOGTAG,"detected original filename during pgp decryption");
-								String mime = MimeUtils.guessMimeTypeFromExtension(originalExtension);
-								String path = outputFile.getName()+"."+originalExtension;
-								DownloadableFile fixedFile = mXmppConnectionService.getFileBackend().getFileForPath(path,mime);
-								if (fixedFile.getParentFile().mkdirs()) {
-									Log.d(Config.LOGTAG,"created parent directories for "+fixedFile.getAbsolutePath());
+					try {
+						Intent result = getOpenPgpApi().executeApi(params, is, os);
+						switch (result.getIntExtra(OpenPgpApi.RESULT_CODE, OpenPgpApi.RESULT_CODE_ERROR)) {
+							case OpenPgpApi.RESULT_CODE_SUCCESS:
+								OpenPgpMetadata openPgpMetadata = result.getParcelableExtra(OpenPgpApi.RESULT_METADATA);
+								String originalFilename = openPgpMetadata.getFilename();
+								String originalExtension = originalFilename == null ? null : MimeUtils.extractRelevantExtension(originalFilename);
+								if (originalExtension != null && MimeUtils.extractRelevantExtension(outputFile.getName()) == null) {
+									Log.d(Config.LOGTAG, "detected original filename during pgp decryption");
+									String mime = MimeUtils.guessMimeTypeFromExtension(originalExtension);
+									String path = outputFile.getName() + "." + originalExtension;
+									DownloadableFile fixedFile = mXmppConnectionService.getFileBackend().getFileForPath(path, mime);
+									if (fixedFile.getParentFile().mkdirs()) {
+										Log.d(Config.LOGTAG, "created parent directories for " + fixedFile.getAbsolutePath());
+									}
+									if (outputFile.renameTo(fixedFile)) {
+										Log.d(Config.LOGTAG, "renamed " + outputFile.getAbsolutePath() + " to " + fixedFile.getAbsolutePath());
+										message.setRelativeFilePath(path);
+									}
 								}
-								if (outputFile.renameTo(fixedFile)) {
-									Log.d(Config.LOGTAG, "renamed " + outputFile.getAbsolutePath() + " to " + fixedFile.getAbsolutePath());
-									message.setRelativeFilePath(path);
+								URL url = message.getFileParams().url;
+								mXmppConnectionService.getFileBackend().updateFileParams(message, url);
+								message.setEncryption(Message.ENCRYPTION_DECRYPTED);
+								mXmppConnectionService.updateMessage(message);
+								if (!inputFile.delete()) {
+									Log.w(Config.LOGTAG, "unable to delete pgp encrypted source file " + inputFile.getAbsolutePath());
 								}
-							}
-							URL url = message.getFileParams().url;
-							mXmppConnectionService.getFileBackend().updateFileParams(message, url);
-							message.setEncryption(Message.ENCRYPTION_DECRYPTED);
-							mXmppConnectionService.updateMessage(message);
-							if (!inputFile.delete()) {
-								Log.w(Config.LOGTAG,"unable to delete pgp encrypted source file "+inputFile.getAbsolutePath());
-							}
-							skipNotificationPush = true;
-							mXmppConnectionService.getFileBackend().updateMediaScanner(outputFile, () -> notifyIfPending(message));
-							break;
-						case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
-							synchronized (PgpDecryptionService.this) {
-								PendingIntent pendingIntent = result.getParcelableExtra(OpenPgpApi.RESULT_INTENT);
-								messages.addFirst(message);
-								currentMessage = null;
-								storePendingIntent(pendingIntent);
-							}
-							break;
-						case OpenPgpApi.RESULT_CODE_ERROR:
-							message.setEncryption(Message.ENCRYPTION_DECRYPTION_FAILED);
-							mXmppConnectionService.updateMessage(message);
-							break;
+								skipNotificationPush = true;
+								mXmppConnectionService.getFileBackend().updateMediaScanner(outputFile, () -> notifyIfPending(message));
+								break;
+							case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
+								synchronized (PgpDecryptionService.this) {
+									PendingIntent pendingIntent = result.getParcelableExtra(OpenPgpApi.RESULT_INTENT);
+									messages.addFirst(message);
+									currentMessage = null;
+									storePendingIntent(pendingIntent);
+								}
+								break;
+							case OpenPgpApi.RESULT_CODE_ERROR:
+								message.setEncryption(Message.ENCRYPTION_DECRYPTION_FAILED);
+								mXmppConnectionService.updateMessage(message);
+								break;
+						}
+					}finally {
+						is.close();
 					}
 				} catch (final IOException e) {
 					message.setEncryption(Message.ENCRYPTION_DECRYPTION_FAILED);
