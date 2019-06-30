@@ -295,7 +295,7 @@ public class MemorizingTrustManager {
 	 * @param defaultVerifier the {@link HostnameVerifier} that should perform the actual check
 	 * @return a new hostname verifier using the MTM's key store
 	 *
-	 * @throws IllegalArgumentException if the defaultVerifier parameter is null
+	 * @throws if the defaultVerifier parameter is null
 	 */
 	public DomainHostnameVerifier wrapHostnameVerifier(final HostnameVerifier defaultVerifier, final boolean interactive) {
 		if (defaultVerifier == null)
