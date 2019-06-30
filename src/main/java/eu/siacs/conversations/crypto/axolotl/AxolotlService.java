@@ -657,7 +657,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 				}
 			});
 		} catch (Exception e) {
-			e.printStackTrace();
+			Log.d(Config.LOGTAG, e.getMessage());
 		}
 	}
 
