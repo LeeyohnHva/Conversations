@@ -163,6 +163,7 @@ public class ImportBackupService extends Service {
 
             GZIPInputStream gzipInputStream = new GZIPInputStream(cipherInputStream);
             BufferedReader reader = new BufferedReader(new InputStreamReader(gzipInputStream, "UTF-8"));
+            try {
             String line;
             StringBuilder multiLineQuery = null;
             while ((line = reader.readLine()) != null) {
@@ -181,6 +182,9 @@ public class ImportBackupService extends Service {
                         multiLineQuery = new StringBuilder(line);
                     }
                 }
+            }
+            } finally {
+                reader.close();
             }
             final Jid jid = backupFileHeader.getJid();
             Cursor countCursor = db.rawQuery("select count(messages.uuid) from messages join conversations on conversations.uuid=messages.conversationUuid join accounts on conversations.accountUuid=accounts.uuid where accounts.username=? and accounts.server=?", new String[]{jid.getEscapedLocal(), jid.getDomain()});

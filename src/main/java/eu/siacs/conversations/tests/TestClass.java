@@ -19,18 +19,15 @@ import rocks.xmpp.addr.Jid;
 
 import static eu.siacs.conversations.entities.Conversational.MODE_SINGLE;
 import static eu.siacs.conversations.entities.Message.TYPE_IMAGE;
-import static eu.siacs.conversations.entities.Presence.Status.ONLINE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.mockito.Mockito;
-import org.mockito.Mockito.*;
 
 
 public class TestClass {
@@ -121,15 +118,36 @@ public class TestClass {
   private File file;
   private String photoUri;
   private String imageFilePath;
+  private int lastSeen;
+  private int invalidLastSeen;
   @Before
   public void CreateAccount() throws IOException {
     testAccount = new Account(jid,"test");
     file  = folder.newFile("myfile1.txt");
     photoUri = "local/test";
     imageFilePath = "local/test";
+    lastSeen = 1500;
+    invalidLastSeen = -20;
   }
 
-  @Test(timeout = 500)
+  //@Test(timeout = 100)
+  @Test
+  public void testLastSeen()
+  {
+    Contact mockedContact = mock(Contact.class);
+    Contact contact = new Contact(jid);
+
+    contact.setLastseen(invalidLastSeen);
+    assertFalse("Last seen can't be a negative timestamp",contact.getLastseen() < 0);
+
+    contact.setLastseen(lastSeen);
+    mockedContact.setLastseen(lastSeen);
+    verify(mockedContact).setLastseen(lastSeen);
+    assertEquals(mockedContact.getLastseen(),contact.getLastseen());
+  }
+
+  //@Test(timeout = 500)
+  @Test
   public void testRecordVoiceMessage()
   {
     RecordingActivity mockedRecording =  Mockito.mock(RecordingActivity.class);
