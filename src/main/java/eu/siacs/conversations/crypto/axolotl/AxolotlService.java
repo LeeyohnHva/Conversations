@@ -64,6 +64,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 	public static final String PEP_BUNDLES = PEP_PREFIX + ".bundles";
 	public static final String PEP_VERIFICATION = PEP_PREFIX + ".verification";
 	public static final String PEP_OMEMO_WHITELISTED = PEP_PREFIX + ".whitelisted";
+	public static final String STRING_ERROR = "error";
 
 	public static final String LOGPREFIX = "AxolotlService";
 
@@ -588,7 +589,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 		mXmppConnectionService.sendIqPacket(account, publish, new OnIqPacketReceived() {
 			@Override
 			public void onIqPacketReceived(Account account, IqPacket packet) {
-				final Element error = packet.getType() == IqPacket.TYPE.ERROR ? packet.findChild("error") : null;
+				final Element error = packet.getType() == IqPacket.TYPE.ERROR ? packet.findChild(STRING_ERROR) : null;
 				final boolean preConditionNotMet = PublishOptions.preconditionNotMet(packet);
 				if (firstAttempt && preConditionNotMet) {
 					Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": precondition wasn't met for device list. pushing node configuration");
@@ -614,7 +615,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 							Log.d(Config.LOGTAG,account.getJid().asBareJid()+": device list pre condition still not met on second attempt");
 						} else if (error != null) {
 							pepBroken = true;
-							Log.d(Config.LOGTAG, getLogprefix(account) + "Error received while publishing own device id" + packet.findChild("error"));
+							Log.d(Config.LOGTAG, getLogprefix(account) + "Error received while publishing own device id" + packet.findChild(STRING_ERROR));
 						}
 
 					}
@@ -688,7 +689,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 				}
 
 				if (packet.getType() == IqPacket.TYPE.ERROR) {
-					Element error = packet.findChild("error");
+					Element error = packet.findChild(STRING_ERROR);
 					if (error == null || !error.hasChild("item-not-found")) {
 						pepBroken = true;
 						Log.w(Config.LOGTAG, AxolotlService.getLogprefix(account) + "request for device bundles came back with something other than item-not-found" + packet);
@@ -1129,9 +1130,9 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 				}
 			} else {
 				fetchStatusMap.put(address, FetchStatus.ERROR);
-				Element error = packet.findChild("error");
+				Element error = packet.findChild(STRING_ERROR);
 				boolean itemNotFound = error != null && error.hasChild("item-not-found");
-				Log.d(Config.LOGTAG, getLogprefix(account) + "Error received while building session:" + packet.findChild("error"));
+				Log.d(Config.LOGTAG, getLogprefix(account) + "Error received while building session:" + packet.findChild(STRING_ERROR));
 				finishBuildingSessionsFromPEP(address);
 				if (oneOfOurs && itemNotFound && cleanedOwnDeviceIds.add(address.getDeviceId())) {
 					removeFromDeviceAnnouncement(address.getDeviceId());
